@@ -1,0 +1,32 @@
+@using EDSOM.Models
+@if (User.Identity?.IsAuthenticated == true)
+{
+    var forzado = User.HasClaim("CambiarPassword", "true");
+    <ul class="navbar-nav ms-auto align-items-lg-center">
+        @if (!forzado && (User.IsInRole(RolesApp.Administrador) || User.IsInRole(RolesApp.SaludOcupacional)))
+        {
+            <li class="nav-item"><a class="nav-link" asp-controller="Funcionarios" asp-action="Index">Funcionarios</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Consultas" asp-action="Index">Signos vitales</a></li>
+        }
+        @if (!forzado && (User.IsInRole(RolesApp.Administrador) || User.IsInRole(RolesApp.SaludOcupacional)))
+        {
+            <li class="nav-item"><a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a></li>
+            <li class="nav-item"><a class="nav-link" asp-controller="Usuarios" asp-action="Accesos">Accesos</a></li>
+        }
+        <li class="nav-item">
+            <span class="navbar-text me-2">
+                @User.FindFirst("NombreCompleto")?.Value
+                <span class="badge text-bg-secondary">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+            </span>
+        </li>
+        @if (!forzado)
+        {
+            <li class="nav-item"><a class="nav-link" asp-controller="Seguridad" asp-action="CambiarPassword">Cambiar contraseña</a></li>
+        }
+        <li class="nav-item">
+            <form asp-controller="Seguridad" asp-action="Logout" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Cerrar sesión</button>
+            </form>
+        </li>
+    </ul>
+}
