@@ -1,0 +1,97 @@
+@model IEnumerable<EDSOM.Models.Usuario>
+@using EDSOM.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Usuarios";
+    var roles = (List<Rol>)ViewBag.Roles;
+    bool esAdmin = User.IsInRole(RolesApp.Administrador);
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Usuarios y roles</h2>
+    <a asp-action="Accesos" class="btn btn-outline-secondary">Ver registro de accesos</a>
+</div>
+
+<partial name="_Mensajes" />
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <input name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Buscar por cédula/usuario o nombre" />
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+        <button class="btn btn-outline-primary">Buscar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Nombre</th>
+                @if (esAdmin)
+                {
+                    <th style="min-width:260px">Rol</th>
+                }
+                <th>Estado</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                bool esYo = u.NombreUsuario == User.Identity?.Name;
+                bool esCuentaAdmin = u.Rol?.Nombre == RolesApp.Administrador;
+                <tr>
+                    <td>@u.NombreUsuario</td>
+                    <td>@(u.Funcionario?.NombreCompleto ?? "—")</td>
+                    @if (esAdmin)
+                    {
+                        <td>
+                            <form asp-action="CambiarRol" method="post" class="d-flex gap-1">
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <select name="rolId" class="form-select form-select-sm" disabled="@esYo"
+                                        asp-items="new SelectList(roles, nameof(Rol.Id), nameof(Rol.Nombre), u.RolId)"></select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" disabled="@esYo">Guardar</button>
+                            </form>
+                        </td>
+                    }
+                    <td>
+                        @if (u.Bloqueado)
+                        {
+                            <span class="badge text-bg-danger">Bloqueado</span>
+                        }
+                        else if (u.CambiarPassword)
+                        {
+
+                            <span class="badge text-bg-warning">Pendiente de primer ingreso</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge text-bg-success">Activo</span>
+                        }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        @if (u.CambiarPassword && !string.IsNullOrEmpty(u.PasswordTemporalCifrada) && (esAdmin || !esCuentaAdmin))
+                        {
+                            <form asp-action="VerPasswordTemporal" asp-route-id="@u.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Ver contraseña temporal</button>
+                            </form>
+                        }
+                        @if (esAdmin)
+                        {
+                            <form asp-action="RegenerarPassword" asp-route-id="@u.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Se generará una contraseña nueva y la actual dejará de funcionar. ¿Continuar?');">
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Regenerar</button>
+                            </form>
+                            <form asp-action="CambiarBloqueo" asp-route-id="@u.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" disabled="@esYo">@(u.Bloqueado ? "Desbloquear" : "Bloquear")</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
